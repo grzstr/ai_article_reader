@@ -18,5 +18,16 @@ This repository contains the implementation of the recruitment task for the Juni
    ```
 
 2. **Install Dependencies**
+   ```bash
+   pip install openai
+   ```
+3. **Set Up API Key**  
+   [OpenAI Quickstart Documentation](https://platform.openai.com/docs/quickstart)
 
-3. **Set Up API Key**
+4. **Run the Application**  
+   ```bash
+   python main.py
+   ```
+
+5. **View the Output**  
+   Check the `artykul.html` file in the repository directory
