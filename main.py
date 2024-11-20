@@ -36,7 +36,7 @@ class AskChat():
         self.podglad_html = 'podglad.html'
 
 
-    def generate_preview(self):
+    def create_preview(self):
         if os.path.exists(self.article_html) and os.path.exists(self.szablon_html):
             with open(self.article_html, 'r', encoding='utf-8') as artykul_file:
                 artykul_content = artykul_file.read()
@@ -44,7 +44,7 @@ class AskChat():
             with open(self.szablon_html, 'r', encoding='utf-8') as szablon_file:
                 szablon_content = szablon_file.read()
 
-            output_content = szablon_content.split('<body>')[0] + artykul_content + szablon_content.split('</body>')[1]
+            output_content = szablon_content.split('<body>')[0] + '\n<body>\n'+ artykul_content + '\n</body>\n' + szablon_content.split('</body>')[1]
 
             with open(self.podglad_html, 'w', encoding='utf-8') as output_file:
                 output_file.write(output_content)
@@ -66,17 +66,17 @@ class AskChat():
         with open(self.article_name, 'wb') as file:
             file.write(r.content)
 
-    def save_as_html(self, content):
+    def save_as_html(self, content, file_name):
         if content.startswith("```html") and content.endswith("```"):
             content = content[8:-3]
-        with open(self.article_html, "wb") as file:
+        with open(file_name, "wb") as file:
             file.write(bytes(content, 'utf-8'))
 
     @timed
-    def ask_chat_gpt(self):
+    def convert_to_html(self):
         client = OpenAI()
         content = self.read_article()
-        print("Asking ChatGPT")
+        print("Asking ChatGPT - ", end='')
         completion = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=[
@@ -84,16 +84,32 @@ class AskChat():
                 {"role": "user",
                 "type": "text", 
                 "content":  'Convert the article to HTML. Suggest where it is worth placing images by inserting <img src="image_placeholder.jpg" alt="">.' + \
-                            ' In the alt attribute, include a detailed prompt for generating the image. Add a caption to each image. Place every image in new line.' + \
-                            f' Its content is to be placed in the <body> section, and return only this section: {content}'},
+                            ' In the alt attribute, include a detailed prompt for generating the image. Add a caption to each image in polish. Place every image in new line.' + \
+                            f' Its content is to be placed in the <body> section, and return only this section, without <body>, </body> signatures: {content}'},
             ]
         )
 
-        self.save_as_html(completion.choices[0].message.content)
+        self.save_as_html(completion.choices[0].message.content, self.article_html)
 
 
+    @timed
+    def generate_template(self):
+        client = OpenAI()
+        print("Asking ChatGPT - ", end = '')
+        completion = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": "You are a tool to process user inputs as fresh tasks without using prior context."},
+                {"role": "user",
+                "type": "text", 
+                "content":  'Create an HTML template to nicely present an article within the <body>. In this template, <body> section must be empty! Please, dont add your comments'},
+            ]
+        )
+
+        self.save_as_html(completion.choices[0].message.content, self.szablon_html)
 
 if __name__ == '__main__':
     chat = AskChat()
-    #chat.generate_preview()
-    chat.ask_chat_gpt()
+    chat.generate_template()
+    chat.convert_to_html()
+    chat.create_preview()
